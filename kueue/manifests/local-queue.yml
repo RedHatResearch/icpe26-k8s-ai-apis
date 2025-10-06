@@ -1,0 +1,8 @@
+# local-queue.yaml
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: LocalQueue
+metadata:
+  name: "local-queue"
+  namespace: sai # Create this in the namespace where you'll run your job.
+spec:
+  clusterQueue: "cluster-queue" # Point to the ClusterQueue created above.

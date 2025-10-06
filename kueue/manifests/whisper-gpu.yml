@@ -1,0 +1,50 @@
+# whisper-job-cpu.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: whisper-transcription-cpu
+  namespace: sai # Change this to your target namespace
+  labels:
+    kueue.x-k8s.io/queue-name: "local-queue"
+spec:
+  parallelism: 2
+  completions: 2
+  template:
+    spec:
+      # Use an initContainer to download the audio file first
+      initContainers:
+      - name: download-audio
+        image: curlimages/curl:latest
+        args:
+        - -L # Follow redirects
+        - -o # Output to file
+        - /data/podcast_clip.mp3
+        - "https://ia903208.us.archive.org/28/items/jfks19620912/jfk_1962_0912_spaceeffort_64kb.mp3" # Sample audio URL
+        volumeMounts:
+        - name: audio-data
+          mountPath: /data
+
+      # Main container to run the transcription
+      containers:
+      - name: whisper-transcriber
+        image: quay.io/smalleni/whisper:latest
+        # Command to run whisper on the downloaded file
+        command: ["sleep", "inf"]
+        resources:
+          requests:
+            cpu: "2"       # Request 2 CPU cores
+            memory: "4Gi"  # Request 4 GiB of memory
+          #limits:
+          #  nvidia.com/gpu: 1
+        volumeMounts:
+        - name: audio-data
+          mountPath: /data
+        - name: model-cache-volume
+          mountPath: /tmp/whisper_models
+      volumes:
+      - name: audio-data
+        emptyDir: {} # An ephemeral volume to share data between containers
+      - name: model-cache-volume
+        emptyDir: {}
+      restartPolicy: Never
+  backoffLimit: 2

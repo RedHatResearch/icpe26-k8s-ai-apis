@@ -1,0 +1,19 @@
+# cluster-queue.yaml
+apiVersion: kueue.x-k8s.io/v1beta1
+kind: ClusterQueue
+metadata:
+  name: "cluster-queue"
+spec:
+  namespaceSelector: {} # An empty selector allows all namespaces to use this ClusterQueue.
+  queueingStrategy: BestEffortFIFO
+  resourceGroups:
+  - coveredResources: ["cpu", "memory", "nvidia.com/gpu"]
+    flavors:
+    - name: "default-flavor"
+      resources:
+      - name: "cpu"
+        nominalQuota: "6" # Total available CPUs in this queue
+      - name: "memory"
+        nominalQuota: "8Gi" # Total available memory in this queue
+      - name: "nvidia.com/gpu"
+        nominalQuota: 2
