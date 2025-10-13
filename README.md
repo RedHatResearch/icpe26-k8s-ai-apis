@@ -1,4 +1,6 @@
-# Kubernetes Audio Transcription with Kueue and Whisper
+# ICPE26 Industry Track Paper
+
+## Kubernetes Audio Transcription with Kueue and Whisper
 
 This project demonstrates parallel audio transcription using OpenAI's Whisper model on Kubernetes/OpenShift, orchestrated by Kueue for workload management. It downloads audio files from the [Rev.com earnings22 speech dataset](https://github.com/revdotcom/speech-datasets/tree/main/earnings22/media) and transcribes them using either CPU or GPU.
 
