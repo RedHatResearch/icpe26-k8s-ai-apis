@@ -8,28 +8,41 @@ metadata:
     kueue.x-k8s.io/queue-name: "local-queue"
 spec:
   parallelism: 2
-  completions: 2
+  completions: 6
+  completionMode: Indexed
   template:
     spec:
-      # Use an initContainer to download the audio file first
+      # Use an initContainer to download the audio file based on JOB_COMPLETION_INDEX
       initContainers:
       - name: download-audio
-        image: curlimages/curl:latest
+        image: quay.io/smalleni/alpine:latest
+        command: ["/bin/sh", "-c"]
         args:
-        - -L # Follow redirects
-        - -o # Output to file
-        - /data/podcast_clip.mp3
-        - "https://ia903208.us.archive.org/28/items/jfks19620912/jfk_1962_0912_spaceeffort_64kb.mp3" # Sample audio URL
+        - |
+          echo "Running download script..."
+          /scripts/download-audio.sh
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: token
         volumeMounts:
         - name: audio-data
           mountPath: /data
+        - name: download-script
+          mountPath: /scripts
 
       # Main container to run the transcription
       containers:
       - name: whisper-transcriber
         image: quay.io/smalleni/whisper:latest
         # Command to run whisper on the downloaded file
-        command: ["sleep", "inf"]
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          FILE=$(ls /data/* | head -n 1)
+          whisper "$FILE" --model_dir /tmp/whisper_models --model tiny.en --output_dir /tmp
         resources:
           requests:
             cpu: "2"       # Request 2 CPU cores
@@ -46,5 +59,9 @@ spec:
         emptyDir: {} # An ephemeral volume to share data between containers
       - name: model-cache-volume
         emptyDir: {}
+      - name: download-script
+        configMap:
+          name: audio-download-script
+          defaultMode: 0755 # Make the script executable
       restartPolicy: Never
   backoffLimit: 2

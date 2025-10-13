@@ -1,0 +1,235 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: audio-download-script
+  namespace: sai
+data:
+  download-audio.sh: |
+    #!/bin/sh
+
+    # This script fetches a list of audio files from a GitHub repository and downloads
+    # a specific file based on the JOB_COMPLETION_INDEX environment variable.
+    # --- Configuration ---
+    # The index of the file to download from JOB_COMPLETION_INDEX env var
+    JOB_COMP_INDEX=${JOB_COMPLETION_INDEX:-0}
+
+    # --- Script Logic ---
+    set -e # Exit immediately if a command exits with a non-zero status.
+
+    echo "Running for completion index: ${JOB_COMP_INDEX}"
+
+    # Set up authentication header if token is provided
+    if [ -n "$GITHUB_TOKEN" ]; then
+      AUTH_HEADER="Authorization: token $GITHUB_TOKEN"
+      echo "Using authenticated GitHub API requests"
+    else
+      AUTH_HEADER=""
+      echo "Warning: No GITHUB_TOKEN set. Using unauthenticated requests (rate limited to 60/hour)"
+    fi
+
+    echo "Fetching file list from GitHub API..."
+
+    REPO_OWNER="revdotcom"
+    REPO_NAME="speech-datasets"
+    DIR_PATH="earnings22/media"
+    API_URL="https://api.github.com/repos/${REPO_OWNER}/${REPO_NAME}/contents/${DIR_PATH}"
+
+    check_rate_limit() {
+      echo "Checking GitHub API rate limit..." >&2
+
+      if [ -n "$AUTH_HEADER" ]; then
+        rate_response=$(curl -s -H "$AUTH_HEADER" "https://api.github.com/rate_limit")
+      else
+        rate_response=$(curl -s "https://api.github.com/rate_limit")
+      fi
+
+      remaining=$(echo "$rate_response" | jq -r '.rate.remaining')
+      limit=$(echo "$rate_response" | jq -r '.rate.limit')
+      reset_time=$(echo "$rate_response" | jq -r '.rate.reset')
+
+      if [ "$remaining" != "null" ]; then
+        echo "Rate limit: $remaining/$limit remaining" >&2
+        if [ "$remaining" -lt 10 ]; then
+          reset_date=$(date -r "$reset_time" 2>/dev/null || date -d "@$reset_time" 2>/dev/null || echo "unknown")
+          echo "Warning: Low rate limit remaining. Resets at: $reset_date" >&2
+        fi
+      fi
+    }
+
+    fetch_with_retry() {
+      local url="$1"
+      local max_retries=5
+      local retry_count=0
+      local base_delay=60
+
+      while [ $retry_count -lt $max_retries ]; do
+        echo "Attempt $((retry_count + 1))..." >&2
+
+        # Fetch directory contents with pagination support
+        # Use authentication header if available
+        if [ -n "$AUTH_HEADER" ]; then
+          http_code=$(curl -s -H "$AUTH_HEADER" -D /tmp/github_headers.txt -o /tmp/github_response.json -w "%{http_code}" "${url}")
+        else
+          http_code=$(curl -s -D /tmp/github_headers.txt -o /tmp/github_response.json -w "%{http_code}" "${url}")
+        fi
+
+        if [ "$http_code" = "200" ]; then
+          cat /tmp/github_response.json
+          # Extract next page URL from Link header if it exists
+          if [ -f /tmp/github_headers.txt ]; then
+            cat /tmp/github_headers.txt > /tmp/link_header.txt
+          fi
+          rm -f /tmp/github_response.json /tmp/github_headers.txt
+          return 0
+        elif [ "$http_code" = "403" ]; then
+          # Rate limited - check details and wait
+          echo "Rate limited (HTTP 403)." >&2
+          check_rate_limit
+          echo "Waiting ${base_delay}s before retry..." >&2
+          sleep $base_delay
+          retry_count=$((retry_count + 1))
+          base_delay=$((base_delay * 2))  # Exponential backoff
+        else
+          echo "Error: HTTP $http_code" >&2
+          if [ -f /tmp/github_response.json ]; then
+            cat /tmp/github_response.json >&2
+            rm -f /tmp/github_response.json
+          fi
+          rm -f /tmp/github_headers.txt /tmp/link_header.txt
+          return 1
+        fi
+
+        # Clean up temp files if they exist
+        rm -f /tmp/github_response.json /tmp/github_headers.txt
+      done
+
+      echo "Failed after $max_retries attempts" >&2
+      return 1
+    }
+
+    # Extract next page URL from Link header
+    get_next_page_url() {
+      local header_file="$1"
+      # Link header format: <https://api.github.com/...?page=2>; rel="next", <https://...>; rel="last"
+      grep -i '^Link:' "$header_file" | sed -n 's/.*<\([^>]*\)>; rel="next".*/\1/p'
+    }
+
+    # Fetch directory contents with pagination support for large directories
+    fetch_all_files() {
+      echo "Attempting to fetch via Contents API with pagination..." >&2
+
+      # Start with the first page URL (with per_page=100 to minimize requests)
+      local current_url="${API_URL}?per_page=100"
+      local all_items="[]"
+      local page=1
+
+      rm -f /tmp/link_header.txt
+
+      while [ -n "$current_url" ]; do
+        echo "Fetching page $page..." >&2
+
+        # Fetch current page
+        page_data=$(fetch_with_retry "$current_url")
+
+        if [ $? -ne 0 ]; then
+          echo "Failed to fetch page $page from GitHub API" >&2
+          return 1
+        fi
+
+        # Check if we got an array response
+        if ! echo "$page_data" | jq -e 'type == "array"' > /dev/null 2>&1; then
+          echo "Error: Unexpected API response format on page $page" >&2
+          echo "$page_data" | jq '.' >&2
+          return 1
+        fi
+
+        # Count items on this page
+        page_count=$(echo "$page_data" | jq 'length')
+        echo "Page $page: $page_count items" >&2
+
+        # Merge this page's data with all_items
+        all_items=$(echo "$all_items" "$page_data" | jq -s '.[0] + .[1]')
+
+        # Check for next page in Link header
+        if [ -f /tmp/link_header.txt ]; then
+          current_url=$(get_next_page_url /tmp/link_header.txt)
+          rm -f /tmp/link_header.txt
+        else
+          current_url=""
+        fi
+
+        page=$((page + 1))
+
+        # Safety check: don't loop forever
+        if [ $page -gt 100 ]; then
+          echo "Warning: Stopped after 100 pages. This seems unusual." >&2
+          break
+        fi
+      done
+
+      total_count=$(echo "$all_items" | jq 'length')
+      echo "Total items fetched: $total_count" >&2
+
+      echo "$all_items"
+      return 0
+    }
+
+    DIRECTORY_JSON=$(fetch_all_files)
+    if [ $? -ne 0 ]; then
+      echo "Failed to fetch directory contents from GitHub API"
+      exit 1
+    fi
+
+    # Filter for MP3 files only
+    MP3_FILES_JSON=$(echo "$DIRECTORY_JSON" | jq '[.[] | select(.name | endswith(".mp3"))]')
+
+    TOTAL_FILES=$(echo "$MP3_FILES_JSON" | jq 'length')
+    echo "Total .mp3 files found: $TOTAL_FILES"
+
+    # Select the file at the specified index from the filtered list.
+    FILENAME=$(echo "$MP3_FILES_JSON" | jq -r ".[${JOB_COMP_INDEX}].name")
+
+    # Exit gracefully if the index is out of bounds.
+    if [ -z "$FILENAME" ] || [ "$FILENAME" == "null" ]; then
+      echo "No file found for index ${JOB_COMP_INDEX}. Maximum index is $(($TOTAL_FILES - 1))."
+      exit 0
+    fi
+
+    echo "Index ${JOB_COMP_INDEX} selected file: $FILENAME"
+
+    # Construct the Git LFS media download URL (for actual MP3 files, not pointers).
+    DOWNLOAD_URL="https://media.githubusercontent.com/media/revdotcom/speech-datasets/main/earnings22/media/$FILENAME"
+    echo "Downloading from $DOWNLOAD_URL..."
+
+    # Download the file into /data directory with retry logic.
+    download_file() {
+      local url="$1"
+      local filename="$2"
+      local max_retries=3
+      local retry_count=0
+
+      while [ $retry_count -lt $max_retries ]; do
+        echo "Download attempt $((retry_count + 1))..." >&2
+
+        if curl -L -f -o "/data/$filename" "$url"; then
+          echo "Download complete. File saved to /data/$filename"
+          return 0
+        else
+          echo "Download failed. Retrying..." >&2
+          retry_count=$((retry_count + 1))
+          sleep 5
+        fi
+      done
+
+      echo "Failed to download $filename after $max_retries attempts"
+      return 1
+    }
+
+    download_file "$DOWNLOAD_URL" "$FILENAME"
+
+    if [ $? -ne 0 ]; then
+      echo "Download failed for $FILENAME"
+      exit 1
+    fi
+
+    echo "Successfully downloaded audio file: $FILENAME"
