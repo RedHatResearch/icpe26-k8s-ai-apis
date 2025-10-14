@@ -2,7 +2,7 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: whisper-transcription-cpu
+  name: whisper-transcription
   namespace: sai # Change this to your target namespace
   labels:
     kueue.x-k8s.io/queue-name: "local-queue"

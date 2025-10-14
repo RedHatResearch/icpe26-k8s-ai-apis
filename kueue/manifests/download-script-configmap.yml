@@ -10,8 +10,11 @@ data:
     # This script fetches a list of audio files from a GitHub repository and downloads
     # a specific file based on the JOB_COMPLETION_INDEX environment variable.
     # --- Configuration ---
-    # The index of the file to download from JOB_COMPLETION_INDEX env var
-    JOB_COMP_INDEX=${JOB_COMPLETION_INDEX:-0}
+    # Base index offset (defaults to 0, can be overridden via BASE_INDEX env var)
+    BASE_INDEX=${BASE_INDEX:-0}
+
+    # The index of the file to download (BASE_INDEX + JOB_COMPLETION_INDEX)
+    JOB_COMP_INDEX=$((${BASE_INDEX} + ${JOB_COMPLETION_INDEX:-0}))
 
     # --- Script Logic ---
     set -e # Exit immediately if a command exits with a non-zero status.
