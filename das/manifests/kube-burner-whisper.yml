@@ -1,0 +1,74 @@
+global:
+  gc: false
+  gcMetrics: false
+  measurements:
+  - name: jobLatency
+metricsEndpoints:
+  - indexer:
+      type: local
+      metricsDirectory: whisper-results-{{.UUID}}
+  
+jobs:
+  - name: create-namespace
+    qps: 1
+    burst: 1
+    jobIterations: 1
+    jobPause: 1s
+    cleanup: true
+    skipIndexing: true
+    objects:
+      - objectTemplate: namespace.yml
+        replicas: 1
+
+  - name: pre-requisites
+    namespace: whisper-scale
+    qps: 1
+    burst: 1
+    jobIterations: 1
+    namespacedIterations: false
+    jobPause: 1s
+    cleanup: true
+    skipIndexing: true
+    objects:
+      - objectTemplate: download-script-configmap.yml
+        replicas: 1
+      - objectTemplate: github-token-secret.yml
+        replicas: 1
+
+  - name: whisper-scale
+    namespace: whisper-scale
+    #jobIterations: 5
+    jobIterations: 15
+    preLoadImages: false #TODO - true
+    namespacedIterations: false
+    cleanup: true
+    podWait: true
+    qps: 1
+    burst: 1
+    objects:
+      - objectTemplate: whisper-das-tiny.yml
+        #replicas: 2
+        replicas: 1
+        inputVars:
+          das: true
+      # - objectTemplate: whisper-das-small.yml
+      #   replicas: 1
+      #   inputVars:
+      #     das: true
+      #     offset: "50"
+
+  # - name: whisper-scale2
+  #   namespace: whisper-scale
+  #   jobIterations: 5
+  #   preLoadImages: false #TODO - true
+  #   namespacedIterations: false
+  #   cleanup: true
+  #   podWait: true
+  #   qps: 1
+  #   burst: 1
+  #   objects:
+  #     - objectTemplate: whisper-das-small.yml
+  #       replicas: 1
+  #       inputVars:
+  #         das: true
+  #         offset: "50"
