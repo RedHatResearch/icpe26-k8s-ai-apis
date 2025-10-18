@@ -1,0 +1,46 @@
+global:
+  gc: false
+  gcMetrics: false
+  measurements:
+  - name: jobLatency
+metricsEndpoints:
+  - indexer:
+      type: local
+      metricsDirectory: whisper-resultsi-{{.UUID}}
+  
+jobs:
+  - name: pre-requisites
+    namespace: whisper-scale
+    qps: 1
+    burst: 1
+    jobIterations: 1
+    namespacedIterations: false
+    jobPause: 1s
+    cleanup: true
+    skipIndexing: true
+    objects:
+      - objectTemplate: cluster-queue.yml
+        replicas: 1
+      - objectTemplate: local-queue.yml
+        replicas: 1
+      - objectTemplate: download-script-configmap.yml
+        replicas: 1
+      - objectTemplate: github-token-secret.yml
+        replicas: 1
+
+  - name: whisper-scale
+    namespace: whisper-scale
+    jobIterations: 2
+    namespacedIterations: false
+    cleanup: true
+    podWait: true
+    preLoadImages: false
+    qps: 1
+    burst: 1
+    objects:
+      - objectTemplate: whisper-job.yml
+        replicas: 1
+        inputVars:
+          gpu: true
+          kueue: true
+

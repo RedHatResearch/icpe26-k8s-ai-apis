@@ -1,6 +1,8 @@
 # Kubernetes secrets with actual credentials
 manifests/*-secret.yml
 !manifests/*-secret.yml.template
+kube-burner/*-secret.yml
+!kube-burner/*-secret.yml.template
 
 # Common patterns
 *.secret.yml
