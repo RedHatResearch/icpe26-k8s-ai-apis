@@ -19,6 +19,8 @@ jobs:
     cleanup: true
     skipIndexing: true
     objects:
+      - objectTemplate: resource-flavor.yml
+        replicas: 1
       - objectTemplate: cluster-queue.yml
         replicas: 1
       - objectTemplate: local-queue.yml
