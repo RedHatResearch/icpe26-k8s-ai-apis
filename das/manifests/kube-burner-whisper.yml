@@ -1,0 +1,68 @@
+global:
+  gc: false
+  gcMetrics: false
+  measurements:
+  - name: jobLatency
+
+metricsEndpoints:
+{{ if .ES_SERVER }}
+  - metrics: [metrics.yml]
+    indexer:
+      insecureSkipVerify: true
+      esServers: [{{.ES_SERVER}}]
+      defaultIndex: {{.ES_INDEX}}
+      type: opensearch      
+{{ end }}
+{{ if .LOCAL_INDEXING }}
+  - metrics: [metrics.yml]
+    indexer:
+      type: local
+      metricsDirectory: whisper-result-{{.UUID}}
+{{ end }}
+
+jobs:
+  - name: create-namespace
+    qps: 1
+    burst: 1
+    jobIterations: 1
+    jobPause: 1s
+    cleanup: true
+    skipIndexing: true
+    objects:
+      - objectTemplate: namespace.yml
+        replicas: 1
+
+  - name: pre-requisites
+    namespace: whisper-scale
+    qps: 1
+    burst: 1
+    jobIterations: 1
+    namespacedIterations: false
+    jobPause: 1s
+    cleanup: true
+    skipIndexing: true
+    objects:
+      - objectTemplate: download-script-configmap.yml
+        replicas: 1
+      - objectTemplate: github-token-secret.yml
+        replicas: 1
+
+  - name: whisper-scale
+    namespace: whisper-scale
+    jobIterations: {{.ITERATIONS}}
+    preLoadImages: false #TODO - true
+    preLoadPeriod: 10m
+    namespacedIterations: false
+    cleanup: true
+    podWait: true
+    qps: 1
+    burst: 1
+    objects:
+      - objectTemplate: whisper-transcription-medium.yml
+        replicas: 1
+        inputVars:
+          das: {{.DAS}}
+      - objectTemplate: whisper-transcription-large.yml
+        replicas: 1
+        inputVars:
+          das: {{.DAS}}

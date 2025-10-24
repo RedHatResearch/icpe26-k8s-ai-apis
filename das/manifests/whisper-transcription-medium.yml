@@ -1,0 +1,61 @@
+kind: Job
+apiVersion: batch/v1
+metadata:
+  name: whisper-transcription-medium-{{.JobName}}-{{.Iteration}}
+  labels:
+    group: whisper-medium
+spec:
+  parallelism: 1
+  completions: 1
+  completionMode: Indexed
+  ttlSecondsAfterFinished: 0
+  template:
+    spec:
+      restartPolicy: Never
+      containers:
+      - name: whisper-transcriber
+        image: quay.io/smalleni/whisper:latest
+        imagePullPolicy: Always
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Running download script..."
+          /scripts/download-audio.sh
+          FILE=$(ls /data/* | head -n 1)
+          echo "Running whisper transcription..."
+          whisper "$FILE" --model_dir /tmp/whisper_models --model medium --output_dir /tmp
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: token
+        - name: ITERATION
+          value: "{{.Iteration}}"
+        resources:
+          requests:
+            cpu: "2"
+            memory: "8Gi"
+          limits:
+            memory: "8Gi"
+{{ if .das }}
+            nvidia.com/mig-1g.5gb: 1
+{{ else }}
+            nvidia.com/gpu: 1
+{{ end}}
+        volumeMounts:
+        - name: audio-data
+          mountPath: /data
+        - name: model-cache-volume
+          mountPath: /tmp/whisper_models
+        - name: download-script
+          mountPath: /scripts
+      volumes:
+      - name: audio-data
+        emptyDir: {}
+      - name: model-cache-volume
+        emptyDir: {}
+      - name: download-script
+        configMap:
+          name: audio-download-script
+          defaultMode: 0755

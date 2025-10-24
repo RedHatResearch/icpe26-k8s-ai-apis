@@ -1,0 +1,7 @@
+# Kubernetes secrets with actual credentials
+manifests/*-secret.yml
+!manifests/*-secret.yml.template
+
+# Common patterns
+*.secret.yml
+*.secret.yaml
