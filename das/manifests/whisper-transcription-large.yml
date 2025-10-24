@@ -1,9 +1,9 @@
 kind: Job
 apiVersion: batch/v1
 metadata:
-  name: whisper-transcription-small-das-{{.JobName}}-{{.Iteration}}-{{.Replica}}
+  name: whisper-transcription-large-{{.JobName}}-{{.Iteration}}
   labels:
-    group: whisper-small
+    group: whisper-large
 spec:
   parallelism: 1
   completions: 1
@@ -13,7 +13,7 @@ spec:
     spec:
       restartPolicy: Never
       containers:
-      - name: whisper-transcriber-das
+      - name: whisper-transcriber
         image: quay.io/smalleni/whisper:latest
         imagePullPolicy: Always
         command: ["/bin/sh", "-c"]
@@ -23,7 +23,7 @@ spec:
           /scripts/download-audio.sh
           FILE=$(ls /data/* | head -n 1)
           echo "Running whisper transcription..."
-          whisper "$FILE" --model_dir /tmp/whisper_models --model small.en --output_dir /tmp
+          whisper "$FILE" --model_dir /tmp/whisper_models --model large --output_dir /tmp
         env:
         - name: GITHUB_TOKEN
           valueFrom:
@@ -32,12 +32,14 @@ spec:
               key: token
         - name: ITERATION
           value: "{{.Iteration}}"
+        - name: BASE_INDEX
+          value: "50"
         resources:
           requests:
-            cpu: "2"
-            memory: "4Gi"
+            cpu: "4"
+            memory: "12Gi"
           limits:
-            memory: "4Gi"
+            memory: "12Gi"
 {{ if .das }}
             nvidia.com/mig-3g.20gb: 1
 {{ else }}
@@ -52,10 +54,10 @@ spec:
           mountPath: /scripts
       volumes:
       - name: audio-data
-        emptyDir: {} # An ephemeral volume to share data between containers
+        emptyDir: {}
       - name: model-cache-volume
         emptyDir: {}
       - name: download-script
         configMap:
           name: audio-download-script
-          defaultMode: 0755 # Make the script executable
+          defaultMode: 0755
