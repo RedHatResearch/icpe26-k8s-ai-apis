@@ -2,16 +2,15 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: whisper-transcription-{{.Iteration}}
+  name: whisper-transcription-medium-{{.Iteration}}
 {{ if .kueue }}
   labels:
-    kueue.x-k8s.io/queue-name: "local-queue"
+    kueue.x-k8s.io/queue-name: "local-queue-medium"
 {{ end }}
 spec:
   parallelism: 1
   completions: 1
   completionMode: Indexed
-  ttlSecondsAfterFinished: 0
   template:
     spec:
          # Main container to run the transcription
@@ -26,7 +25,7 @@ spec:
           /scripts/download-audio.sh
           FILE=$(ls /data/* | head -n 1)
           echo "Running whisper transcription..."
-          whisper "$FILE" --model_dir /tmp/whisper_models --model small.en --output_dir /tmp
+          whisper "$FILE" --model_dir /tmp/whisper_models --model medium --output_dir /tmp
         env:
         - name: GITHUB_TOKEN
           valueFrom:

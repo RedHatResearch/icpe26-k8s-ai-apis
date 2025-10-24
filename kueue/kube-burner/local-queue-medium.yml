@@ -2,6 +2,6 @@
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: LocalQueue
 metadata:
-  name: "local-queue"
+  name: "local-queue-medium"
 spec:
   clusterQueue: "cluster-queue"

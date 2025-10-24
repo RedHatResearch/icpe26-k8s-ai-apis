@@ -3,6 +3,7 @@ global:
   gcMetrics: false
   measurements:
   - name: jobLatency
+  - name: podLatency
 metricsEndpoints:
   - indexer:
       type: local
@@ -18,12 +19,16 @@ jobs:
     jobPause: 1s
     cleanup: true
     skipIndexing: true
+    namespaceLabels:
+      kueue.openshift.io/managed: true
     objects:
       - objectTemplate: resource-flavor.yml
         replicas: 1
       - objectTemplate: cluster-queue.yml
         replicas: 1
-      - objectTemplate: local-queue.yml
+      - objectTemplate: local-queue-medium.yml
+        replicas: 1
+      - objectTemplate: local-queue-large.yml
         replicas: 1
       - objectTemplate: download-script-configmap.yml
         replicas: 1
@@ -32,7 +37,7 @@ jobs:
 
   - name: whisper-scale
     namespace: whisper-scale
-    jobIterations: 2
+    jobIterations: 16
     namespacedIterations: false
     cleanup: true
     podWait: true
@@ -40,7 +45,12 @@ jobs:
     qps: 1
     burst: 1
     objects:
-      - objectTemplate: whisper-job.yml
+      - objectTemplate: whisper-job-medium.yml
+        replicas: 1
+        inputVars:
+          gpu: true
+          kueue: true
+      - objectTemplate: whisper-job-large.yml
         replicas: 1
         inputVars:
           gpu: true

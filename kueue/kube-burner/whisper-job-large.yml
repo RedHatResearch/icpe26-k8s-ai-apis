@@ -1,0 +1,61 @@
+# whisper-job-cpu.yaml
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: whisper-transcription-large-{{.Iteration}}
+{{ if .kueue }}
+  labels:
+    kueue.x-k8s.io/queue-name: "local-queue-large"
+{{ end }}
+spec:
+  parallelism: 1
+  completions: 1
+  completionMode: Indexed
+  template:
+    spec:
+         # Main container to run the transcription
+      containers:
+      - name: whisper-transcriber
+        image: quay.io/smalleni/whisper:latest
+        # Command to run whisper on the downloaded file
+        command: ["/bin/sh", "-c"]
+        args:
+        - |
+          echo "Running download script..."
+          /scripts/download-audio.sh
+          FILE=$(ls /data/* | head -n 1)
+          echo "Running whisper transcription..."
+          whisper "$FILE" --model_dir /tmp/whisper_models --model large --output_dir /tmp
+        env:
+        - name: GITHUB_TOKEN
+          valueFrom:
+            secretKeyRef:
+              name: github-token
+              key: token
+        - name: ITERATION
+          value: "{{.Iteration}}"
+        - name: BASE_INDEX
+          value: "50"
+        resources:
+{{ if .gpu }}
+          limits:
+            nvidia.com/gpu: 1
+{{ end }}
+        volumeMounts:
+        - name: audio-data
+          mountPath: /data
+        - name: model-cache-volume
+          mountPath: /tmp/whisper_models
+        - name: download-script
+          mountPath: /scripts
+      volumes:
+      - name: audio-data
+        emptyDir: {} # An ephemeral volume to share data between containers
+      - name: model-cache-volume
+        emptyDir: {}
+      - name: download-script
+        configMap:
+          name: audio-download-script
+          defaultMode: 0755 # Make the script executable
+      restartPolicy: Never
+  backoffLimit: 2
