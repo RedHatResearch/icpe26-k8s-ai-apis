@@ -41,7 +41,7 @@ spec:
         command: ["/bin/sh", "-c"]
         args:  # TODO: optimize model downloading
         - |
-          python -c 'import requests; open("/tmp/transcript_dataset.csv", "wb").write(requests.get("https://github.com/RedHatResearch/icpe26-k8s-ai-apis/raw/refs/heads/main/guidellm/trimmed-transcript_dataset.csv").content)'
+          python -c 'import requests; open("/tmp/transcript_dataset.csv", "wb").write(requests.get("https://github.com/RedHatResearch/icpe26-k8s-ai-apis/raw/refs/heads/main/llm-d/guidellm/trimmed-transcript_dataset.csv").content)'
           # warmup
           export GUIDELLM_RATE=25
           GUIDELLM__OPENAI__MAX_OUTPUT_TOKENS=1 guidellm benchmark run
