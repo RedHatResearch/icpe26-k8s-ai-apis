@@ -297,7 +297,12 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | Kubernetes | 1.32 |
 | DAS | 0.1.0 |
 | Kueue |  |
-| Inference Gateway |  |
 | NVIDIA GPU Operator | 25.3.4 |
 | Node Feature Discovery Operator | 4.19.0-202510142112 |
 | cert-manager Operator | 1.17.0 |
+| Gateway API Inference extension | v0.5.1 |
+| OpenShift Service Mesh (Required for Istio) | 3.1.3 |
+| Istio | v1.26.3 |
+| llm-d-inference-scheduler | v0.3.2 |
+| vLLM (From ghcr.io/llm-d/llm-d-cuda:v0.3.0) | 0.11.0rc6+precompiled |
+| Guidellm | v0.3.1 |
