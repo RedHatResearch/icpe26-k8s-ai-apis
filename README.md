@@ -295,7 +295,7 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 |-------|----------|
 | OpenShift | 4.19.16 |
 | Kubernetes | 1.3 |
-| DAS |  |
+| DAS | 0.1.0 |
 | Kueue |  |
 | Inference Gateway |  |
 | NVIDIA GPU Operator | 25.3.4 |
