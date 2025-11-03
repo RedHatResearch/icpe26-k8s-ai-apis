@@ -1,0 +1,65 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  generateName: guidellm-icpe26
+spec:
+  completions: 1
+  parallelism: 1
+  completionMode: Indexed
+  backoffLimit: 0
+  template:
+    spec:
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+            - matchExpressions:
+              - key: node-role.kubernetes.io/infra
+                operator: DoesNotExist
+              - key: node-role.kubernetes.io/worker
+                operator: Exists
+      restartPolicy: Never
+      containers:
+      - name: guidellm
+        volumeMounts:
+        - name: results
+          mountPath: /results
+        env:
+          - name: GUIDELLM_TARGET
+            value: http://infra-kv-events-inference-gateway-istio.llm-d-precise.svc.cluster.local
+          - name: GUIDELLM_MAX_REQUESTS
+            value: "256"
+          - name: GUIDELLM_RATE_TYPE
+            value: concurrent
+          - name: GUIDELLM_DATA
+            value: /tmp/transcript_dataset.csv
+          - name: ES_SERVER
+            value: placeholder
+          - name: HF_HOME
+            value: /results
+        image: ghcr.io/rsevilla87/guidellm-results-parser:v0.0.2
+        command: ["/bin/sh", "-c"]
+        args:  # TODO: optimize model downloading
+        - |
+          python -c 'import requests; open("/tmp/transcript_dataset.csv", "wb").write(requests.get("https://github.com/RedHatResearch/icpe26-k8s-ai-apis/raw/refs/heads/main/guidellm/trimmed-transcript_dataset.csv").content)'
+          # warmup
+          export GUIDELLM_RATE=25
+          GUIDELLM__OPENAI__MAX_OUTPUT_TOKENS=1 guidellm benchmark run
+          uuid=$(cat /proc/sys/kernel/random/uuid)
+          sample=0
+          for r in 5 10 15 20; do
+            export GUIDELLM_RATE=$r
+            GUIDELLM__OPENAI__MAX_OUTPUT_TOKENS=512 guidellm benchmark run &&                      
+            guidellm_parser.py \
+            --results=/results/benchmarks.json \
+            --uuid=${uuid} \
+            --es-server=${ES_SERVER} \
+            --es-index=guidellm \
+            --job-name=random-scheduling-${r} \
+            --sample=${sample} &&
+            ((sample++))
+            sleep 10s
+          done
+      volumes:
+      - name: results
+        emptyDir: {}
