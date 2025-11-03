@@ -1,2 +1,0 @@
-FROM ghcr.io/rsevilla87/guidellm-results-parser:v0.0.2
-COPY transcript_dataset.csv /tmp/transcript_dataset.csv
