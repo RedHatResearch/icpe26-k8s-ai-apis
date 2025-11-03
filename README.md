@@ -294,8 +294,10 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | Software | Version |
 |-------|----------|
 | OpenShift | 4.19.16 |
-| Kubernetes | 1.3 |
+| Kubernetes | 1.32 |
 | DAS | 0.1.0 |
 | Kueue |  |
 | Inference Gateway |  |
 | NVIDIA GPU Operator | 25.3.4 |
+| Node Feature Discovery Operator | 4.19.0-202510142112 |
+| cert-manager Operator | 1.17.0 |
