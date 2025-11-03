@@ -288,3 +288,14 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | **Job stuck in queue** | Check Kueue workload admission status: `oc describe workload <name> -n sai` |
 | **Image pull errors** | Verify container images are pushed to your registry and image references in manifests are correct |
 | **Transcription fails** | Check main container logs: `oc logs <pod-name> -n sai -c whisper-transcriber` |
+
+## Version control
+
+| Software | Version |
+|-------|----------|
+| OpenShift | 4.19.16 |
+| Kubernetes | 1.3 |
+| DAS |  |
+| Kueue |  |
+| Inference Gateway |  |
+| NVIDIA GPU Operator | 25.3.4 |
