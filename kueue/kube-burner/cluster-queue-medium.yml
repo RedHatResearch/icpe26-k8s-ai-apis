@@ -2,16 +2,17 @@
 apiVersion: kueue.x-k8s.io/v1beta1
 kind: ClusterQueue
 metadata:
-  name: "cluster-queue"
+  name: "cluster-queue-medium"
 spec:
   namespaceSelector: {} # An empty selector allows all namespaces to use this ClusterQueue.
   queueingStrategy: BestEffortFIFO
-  preemption:
-    withinClusterQueue: LowerPriority
+  cohort: gpu-cohort
   resourceGroups:
   - coveredResources: ["nvidia.com/gpu"]
     flavors:
     - name: "gpu-flavor"
       resources:
       - name: "nvidia.com/gpu"
-        nominalQuota: 8
+        nominalQuota: 4
+        borrowingLimit: 0
+        lendingLimit: 4

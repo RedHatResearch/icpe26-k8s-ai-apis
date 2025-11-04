@@ -7,7 +7,7 @@ global:
 metricsEndpoints:
   - indexer:
       type: local
-      metricsDirectory: whisper-resultsi-{{.UUID}}
+      metricsDirectory: whisper-results-{{.UUID}}
   
 jobs:
   - name: pre-requisites
@@ -21,6 +21,7 @@ jobs:
     skipIndexing: true
     namespaceLabels:
       kueue.openshift.io/managed: true
+    waitWhenFinished: false
     objects:
       - objectTemplate: resource-flavor.yml
         replicas: 1
@@ -30,14 +31,19 @@ jobs:
         replicas: 1
       - objectTemplate: local-queue-large.yml
         replicas: 1
+      - objectTemplate: priority.yml
+        replicas: 1
       - objectTemplate: download-script-configmap.yml
         replicas: 1
       - objectTemplate: github-token-secret.yml
+        replicas: 1
+      - objectTemplate: pvc.yml
         replicas: 1
 
   - name: whisper-scale
     namespace: whisper-scale
     jobIterations: 16
+    jobIterationDelay : 1s
     namespacedIterations: false
     cleanup: true
     podWait: true

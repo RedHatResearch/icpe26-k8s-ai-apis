@@ -1,0 +1,11 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: whisper-storage
+spec:
+  accessModes:
+    - ReadWriteOnce # This is required for EBS. It means the volume can be mounted as read-write by a single node.
+  storageClassName: gp3 # This MUST match the name of your StorageClass
+  resources:
+    requests:
+      storage: 10Gi # The size of the volume you are requesting
