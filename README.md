@@ -296,7 +296,7 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | OpenShift | 4.19.16 |
 | Kubernetes | 1.32 |
 | DAS | 0.1.0 |
-| Kueue |  |
+| Kueue | 1.1.0 |
 | NVIDIA GPU Operator | 25.3.4 |
 | Node Feature Discovery Operator | 4.19.0-202510142112 |
 | cert-manager Operator | 1.17.0 |
@@ -306,3 +306,4 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | llm-d-inference-scheduler | v0.3.2 |
 | vLLM (from [ghcr.io/llm-d/llm-d-cuda:v0.3.0](https://github.com/llm-d/llm-d/pkgs/container/llm-d-cuda)) | 0.11.0rc6+precompiled |
 | Guidellm | v0.3.1 |
+| kube-burner | v1.17.7 |
