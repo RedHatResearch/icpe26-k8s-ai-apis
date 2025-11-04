@@ -304,5 +304,5 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | OpenShift Service Mesh (Required for Istio) | 3.1.3 |
 | Istio | v1.26.3 |
 | llm-d-inference-scheduler | v0.3.2 |
-| vLLM (From [ghcr.io/llm-d/llm-d-cuda:v0.3.0](https://github.com/llm-d/llm-d/pkgs/container/llm-d-cuda)) | 0.11.0rc6+precompiled |
+| vLLM (from [ghcr.io/llm-d/llm-d-cuda:v0.3.0](https://github.com/llm-d/llm-d/pkgs/container/llm-d-cuda)) | 0.11.0rc6+precompiled |
 | Guidellm | v0.3.1 |
