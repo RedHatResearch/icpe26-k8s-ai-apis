@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1068403958.svg)](https://doi.org/10.5281/zenodo.18347047)
+
 # ICPE26 Industry Track Paper
 
 ## Kubernetes Audio Transcription with Kueue and Whisper
