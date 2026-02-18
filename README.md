@@ -12,8 +12,11 @@ For experienced users, here's the TL;DR version:
 
 ```bash
 # 1. Build and push containers
-podman build -t quay.io/<user>/alpine:latest -f containers/init/Dockerfile containers/init/ && podman push quay.io/<user>/alpine:latest
-podman build -t quay.io/<user>/whisper:latest -f containers/whisper/Dockerfile containers/whisper/ && podman push quay.io/<user>/whisper:latest
+podman build --platform linux/amd64 -t quay.io/<user>/alpine:latest -f containers/init/Dockerfile containers/init/ && podman push quay.io/<user>/alpine:latest
+# With RHEL subscription:
+podman build --platform linux/amd64 -t quay.io/<user>/whisper:latest -f containers/whisper/Dockerfile containers/whisper/ && podman push quay.io/<user>/whisper:latest
+# Without subscription (Fedora-based):
+podman build --platform linux/amd64 -t quay.io/<user>/whisper:latest -f containers/whisper/Dockerfile.fedora containers/whisper/ && podman push quay.io/<user>/whisper:latest
 
 # 2. Create namespace and apply Kueue configs
 oc create namespace sai
@@ -45,7 +48,8 @@ See detailed instructions below for more information.
 │   ├── init/
 │   │   └── Dockerfile          # Alpine image with curl and jq for downloading files
 │   └── whisper/
-│       └── Dockerfile          # Whisper transcription image with Python and ffmpeg
+│       ├── Dockerfile          # Whisper transcription image (UBI 10, requires RHEL subscription)
+│       └── Dockerfile.fedora   # Whisper transcription image (Fedora, no subscription required)
 └── kueue/
     └── manifests/
         ├── resource-flavor.yml              # Defines CPU/GPU resource types
@@ -78,13 +82,23 @@ Follow these steps in order to set up the audio transcription pipeline:
 
 **Build the init container** (Alpine with curl and jq for downloading audio files):
 ```bash
-podman build -t quay.io/<your-username>/alpine:latest -f containers/init/Dockerfile containers/init/
+podman build --platform linux/amd64 -t quay.io/<your-username>/alpine:latest -f containers/init/Dockerfile containers/init/
 podman push quay.io/<your-username>/alpine:latest
 ```
 
 **Build the Whisper container** (Python with ffmpeg and openai-whisper for transcription):
+
+There are two Dockerfile options:
+- `Dockerfile` — based on UBI 10, requires a Red Hat subscription for access to RHEL repos
+- `Dockerfile.fedora` — based on Fedora, no subscription required
+
 ```bash
-podman build -t quay.io/<your-username>/whisper:latest -f containers/whisper/Dockerfile containers/whisper/
+# Option A: UBI 10 (requires RHEL subscription/entitlements)
+podman build --platform linux/amd64 -t quay.io/<your-username>/whisper:latest -f containers/whisper/Dockerfile containers/whisper/
+
+# Option B: Fedora (no subscription required)
+podman build --platform linux/amd64 -t quay.io/<your-username>/whisper:latest -f containers/whisper/Dockerfile.fedora containers/whisper/
+
 podman push quay.io/<your-username>/whisper:latest
 ```
 
