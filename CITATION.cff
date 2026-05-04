@@ -1,0 +1,18 @@
+cff-version: 1.2.0
+title: "Evaluating Kubernetes Performance for GenAI Inference: From Automatic Speech Recognition to LLM Summarization"
+authors:
+  - family-names: Malleni
+    given-names: Sai Sindhur
+  - family-names: Sevilla
+    given-names: Raúl
+  - family-names: Aleksei
+    given-names: Vasilevskii
+  - family-names: Lema
+    given-names: José Castillo
+  - family-names: Bauer
+    given-names: André
+doi: "10.1145/3777884.3796983"
+url: "https://doi.org/10.1145/3777884.3796983"
+repository-code: "https://github.com/RedHatResearch/icpe26-k8s-ai-apis"
+date-released: "2026-05"
+message: "If you use this repository in research, please cite the associated ICPE 2026 paper."
