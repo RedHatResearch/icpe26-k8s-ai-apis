@@ -323,3 +323,25 @@ Audio files are sourced from the [Rev.com Speech Datasets - earnings22](https://
 | vLLM (from [ghcr.io/llm-d/llm-d-cuda:v0.3.0](https://github.com/llm-d/llm-d/pkgs/container/llm-d-cuda)) | 0.11.0rc6+precompiled |
 | Guidellm | v0.3.1 |
 | kube-burner | v1.17.7 |
+
+## Citing our paper
+
+```bibtex
+@inproceedings{10.1145/3777884.3796983,
+  author = {Malleni, Sai Sindhur and Sevilla, Ra\'{u}l and Vasilevskii, Aleksei and Lema, Jos\'{e} Castillo and Bauer, Andr\'{e}},
+  title = {Evaluating Kubernetes Performance for GenAI Inference: From Automatic Speech Recognition to LLM Summarization},
+  year = {2026},
+  isbn = {9798400723254},
+  publisher = {Association for Computing Machinery},
+  address = {New York, NY, USA},
+  url = {https://doi.org/10.1145/3777884.3796983},
+  doi = {10.1145/3777884.3796983},
+  abstract = {As Generative AI (GenAI), particularly inference, rapidly emerges as a dominant workload category, the Kubernetes ecosystem is proactively evolving to natively support its unique demands. This industry paper demonstrates how emerging Kubernetes-native projects can be combined to deliver the benefits of container orchestration, such as scalability and resource efficiency, to complex AI workflows. We implement and evaluate an illustrative, multi-stage use case consisting of automatic speech recognition and summarization. First, we address batch inference by using Kueue to manage jobs that transcribe audio files with Whisper models and Dynamic Accelerator Slicer (DAS) to increase parallel job execution. Second, we address a discrete online inference scenario by feeding the transcripts to a Large Language Model for summarization hosted using llm-d, a novel solution utilizing the recent developments around the Kubernetes Gateway API Inference Extension (GAIE) for optimized routing of inference requests. Our findings illustrate that these complementary components (Kueue, DAS, and GAIE) form a cohesive, high-performance platform, proving Kubernetes' capability to serve as a unified foundation for demanding GenAI workloads: Kueue reduced total makespan by up to 15\%; DAS shortened mean job completion time by 36\%; and GAIE working in conjunction with llm-d improved tail Time to First Token latency by up to 90\% even under high loads.},
+  booktitle = {Proceedings of the 17th ACM/SPEC International Conference on Performance Engineering},
+  pages = {135–146},
+  numpages = {12},
+  keywords = {kubernetes, cloud-native ai workloads, distributed microservices, benchmarking, distributed inference, agentic ai},
+  location = {Italy},
+  series = {ICPE '26}
+}
+```
